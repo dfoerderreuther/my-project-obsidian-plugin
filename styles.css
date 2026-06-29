@@ -1,0 +1,508 @@
+.mpp {
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fixed top region — never scrolls */
+.mpp-fixed {
+  flex: 0 0 auto;
+  padding: 12px 10px 8px;
+}
+
+/* Tab bar */
+.mpp-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  overflow-x: auto;
+}
+.mpp-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+.mpp-tab:hover { color: var(--text-normal); }
+.mpp-tab.is-active {
+  color: var(--text-normal);
+  border-bottom-color: var(--color-accent);
+  font-weight: 600;
+}
+.mpp-tab-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scrollable tab body */
+.mpp-tab-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 8px 10px 40px;
+}
+.mpp-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.mpp-tab-path {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+/* ── Status bar ──────────────────────────────────────────────────────────── */
+
+.mpp-statusbar {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.mpp-statusbar:hover { color: var(--text-normal); }
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+
+.mpp-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.mpp-title {
+  font-size: var(--h3-size);
+  font-weight: 700;
+  margin: 0;
+  flex: 1;
+  color: var(--text-normal);
+  line-height: 1.3;
+}
+
+.mpp-project-select {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--h3-size);
+  font-weight: 700;
+  height: auto;
+  padding: 2px 22px 2px 6px;
+}
+
+.mpp-gear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.mpp-gear:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.mpp-gear svg { width: 16px; height: 16px; }
+
+/* ── Ant Design icons ────────────────────────────────────────────────────── */
+
+/* Button leading icons (Claude / Workfront / Obsidian) */
+.mpp-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 5px;
+}
+.mpp-btn-icon svg { width: 14px; height: 14px; }
+
+/* Status bar icon */
+.mpp-statusbar-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+.mpp-statusbar-icon svg { width: 13px; height: 13px; }
+
+/* Collapse caret — points right when collapsed, rotates down when open */
+.mpp .nav-folder-collapse-indicator svg { transition: transform 100ms ease-in-out; }
+.mpp .nav-folder-collapse-indicator.is-collapsed svg { transform: none; }
+.mpp .nav-folder-collapse-indicator:not(.is-collapsed) svg { transform: rotate(90deg); }
+
+/* Finder buttons in tab bar */
+.mpp-path-finder svg { width: 16px; height: 16px; display: block; }
+
+/* Modal add-folder icon */
+.mpp-path-add svg { width: 15px; height: 15px; }
+
+/* ── Settings modal ──────────────────────────────────────────────────────── */
+
+.mpp-settings-modal { width: 640px; max-width: 90vw; }
+
+.mpp-path-field {
+  margin: 14px 0 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.mpp-path-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.mpp-path-name { font-weight: 600; font-size: var(--font-ui-medium); }
+
+.mpp-path-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.mpp-path-add svg { width: 15px; height: 15px; }
+
+.mpp-path-list { display: flex; flex-direction: column; gap: 3px; }
+
+.mpp-path-empty {
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+  padding: 6px 4px;
+}
+
+.mpp-path-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+}
+
+.mpp-path-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+.mpp-path-icon svg { width: 15px; height: 15px; }
+
+.mpp-path-base {
+  flex-shrink: 0;
+  font-weight: 500;
+  font-size: var(--font-ui-small);
+}
+
+.mpp-path-full {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;          /* keep the tail (folder name) visible when truncating */
+  text-align: left;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+.mpp-path-remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-faint);
+  border-radius: var(--radius-s);
+}
+.mpp-path-remove:hover { color: var(--text-error); }
+.mpp-path-remove svg { width: 14px; height: 14px; }
+
+/* ── Workfront activity type tag ─────────────────────────────────────────── */
+
+.mpp-wf-meta {
+  margin-bottom: 10px;
+}
+
+.mpp-wf-activity {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  padding: 2px 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ── Action buttons ──────────────────────────────────────────────────────── */
+
+.mpp-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.mpp-btn-claude,
+.mpp-btn-wf {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: var(--radius-m);
+  font-size: var(--font-ui-small);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+}
+
+.mpp-btn-wf {
+  background: var(--interactive-normal);
+  color: var(--text-normal);
+  gap: 5px;
+}
+.mpp-btn-wf:hover { background: var(--interactive-hover); }
+
+.mpp-finder-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.mpp-finder-icon svg { display: block; }
+
+/* ── External path blocks (read/write folders) ──────────────────────────── */
+
+.mpp-path-block { margin-top: 14px; }
+
+.mpp-path-headline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px 4px 4px;
+  border-radius: var(--radius-s);
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: 2px;
+}
+
+.mpp-path-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;        /* truncate the head, keep the tail (folder name) */
+  text-align: left;
+}
+
+.mpp-access {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: var(--radius-s);
+  color: #fff;
+}
+.mpp-access-r  { background: #4a90d9; }
+.mpp-access-w  { background: #e07b3a; }
+.mpp-access-rw { background: #5aaa72; }
+
+.mpp-path-finder {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+.mpp-path-finder:hover { background: var(--background-modifier-hover); }
+.mpp-path-finder svg { display: block; }
+
+/* ── Section headers ─────────────────────────────────────────────────────── */
+
+.mpp-section {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+  margin: 14px 0 5px;
+  padding: 0;
+}
+
+/* ── Expandable folder rows ──────────────────────────────────────────────── */
+
+.mpp-folder-list { display: flex; flex-direction: column; gap: 1px; }
+
+.mpp-folder-wrapper { border-radius: var(--radius-s); }
+
+.mpp-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  color: var(--text-normal);
+  user-select: none;
+}
+.mpp-folder-row:hover { background: var(--background-modifier-hover); }
+
+.mpp-arrow {
+  font-size: 9px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  width: 10px;
+}
+
+.mpp-folder-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mpp-finder-btn {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: var(--radius-s);
+  font-size: 11px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-faint);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.mpp-folder-row:hover .mpp-finder-btn { opacity: 1; }
+.mpp-finder-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+
+/* ── File items (project notes section) ─────────────────────────────────── */
+
+.mpp-file-list { display: flex; flex-direction: column; }
+
+/* ── SharePoint tree file icon — sits in the native .nav-file-icon slot ──── */
+
+.mpp .nav-file-icon svg {
+  width: var(--icon-xs, 14px);
+  height: var(--icon-xs, 14px);
+}
+
+.mpp-file-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+.mpp-file-item:hover { background: var(--background-modifier-hover); }
+
+.mpp-file-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+}
+.mpp-file-icon svg { width: 14px; height: 14px; }
+
+.mpp-icon-red    { color: #e05252; }
+.mpp-icon-blue   { color: #4a90d9; }
+.mpp-icon-green  { color: #5aaa72; }
+.mpp-icon-orange { color: #e07b3a; }
+.mpp-icon-purple { color: #9b72cf; }
+
+/* keep old class name for backwards compat */
+.mpp-subfile-icon { flex-shrink: 0; }
+
+.mpp-file-link {
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.mpp-subfile-ext {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: var(--background-modifier-border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  letter-spacing: 0.03em;
+}
+
+/* ── New note row ────────────────────────────────────────────────────────── */
+
+.mpp-new-note {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.mpp-new-note-input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-ui-small);
+  padding: 4px 7px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+.mpp-new-note-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.mpp-new-note-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  background: var(--interactive-normal);
+  border: none;
+  color: var(--text-normal);
+  white-space: nowrap;
+}
+.mpp-new-note-btn:hover { background: var(--interactive-hover); }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.mpp-empty {
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+  text-align: center;
+  padding: 12px 8px;
+  margin: 0;
+}

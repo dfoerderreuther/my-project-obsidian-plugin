@@ -1,0 +1,9 @@
+{
+  "id": "my-project-panel",
+  "name": "My Project Panel",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Sidebar panel for customer/consulting projects: link a notes folder to external read/write folders, open them in Finder, and launch Claude Code with scoped permissions.",
+  "author": "",
+  "isDesktopOnly": true
+}
