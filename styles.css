@@ -346,38 +346,7 @@
 }
 .mpp-btn-wf:hover { background: var(--interactive-hover); }
 
-.mpp-finder-icon {
-  display: inline-flex;
-  align-items: center;
-}
-.mpp-finder-icon svg { display: block; }
-
-/* ── External path blocks (read/write folders) ──────────────────────────── */
-
-.mpp-path-block { margin-top: 14px; }
-
-.mpp-path-headline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 2px 4px 4px;
-  border-radius: var(--radius-s);
-  border-bottom: 1px solid var(--background-modifier-border);
-  margin-bottom: 2px;
-}
-
-.mpp-path-title {
-  flex: 1;
-  min-width: 0;
-  font-weight: 600;
-  font-size: var(--font-ui-small);
-  color: var(--text-normal);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  direction: rtl;        /* truncate the head, keep the tail (folder name) */
-  text-align: left;
-}
+/* ── Access badges (tab R/W tags) ────────────────────────────────────────── */
 
 .mpp-access {
   flex-shrink: 0;
@@ -405,127 +374,18 @@
 .mpp-path-finder:hover { background: var(--background-modifier-hover); }
 .mpp-path-finder svg { display: block; }
 
-/* ── Section headers ─────────────────────────────────────────────────────── */
-
-.mpp-section {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-faint);
-  margin: 14px 0 5px;
-  padding: 0;
-}
-
-/* ── Expandable folder rows ──────────────────────────────────────────────── */
-
-.mpp-folder-list { display: flex; flex-direction: column; gap: 1px; }
-
-.mpp-folder-wrapper { border-radius: var(--radius-s); }
-
-.mpp-folder-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 8px;
-  border-radius: var(--radius-s);
-  font-size: var(--font-ui-small);
-  cursor: pointer;
-  color: var(--text-normal);
-  user-select: none;
-}
-.mpp-folder-row:hover { background: var(--background-modifier-hover); }
-
-.mpp-arrow {
-  font-size: 9px;
-  color: var(--text-faint);
-  flex-shrink: 0;
-  width: 10px;
-}
-
-.mpp-folder-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mpp-finder-btn {
-  flex-shrink: 0;
-  padding: 1px 5px;
-  border-radius: var(--radius-s);
-  font-size: 11px;
-  cursor: pointer;
-  background: none;
-  border: 1px solid var(--background-modifier-border);
-  color: var(--text-faint);
-  opacity: 0;
-  transition: opacity 0.1s;
-}
-.mpp-folder-row:hover .mpp-finder-btn { opacity: 1; }
-.mpp-finder-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-
-/* ── File items (project notes section) ─────────────────────────────────── */
-
-.mpp-file-list { display: flex; flex-direction: column; }
-
-/* ── SharePoint tree file icon — sits in the native .nav-file-icon slot ──── */
+/* ── File type icon (native nav-file-icon slot) + color accents ──────────── */
 
 .mpp .nav-file-icon svg {
   width: var(--icon-xs, 14px);
   height: var(--icon-xs, 14px);
 }
 
-.mpp-file-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 6px;
-  border-radius: var(--radius-s);
-  cursor: pointer;
-}
-.mpp-file-item:hover { background: var(--background-modifier-hover); }
-
-.mpp-file-icon {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-faint);
-}
-.mpp-file-icon svg { width: 14px; height: 14px; }
-
 .mpp-icon-red    { color: #e05252; }
 .mpp-icon-blue   { color: #4a90d9; }
 .mpp-icon-green  { color: #5aaa72; }
 .mpp-icon-orange { color: #e07b3a; }
 .mpp-icon-purple { color: #9b72cf; }
-
-/* keep old class name for backwards compat */
-.mpp-subfile-icon { flex-shrink: 0; }
-
-.mpp-file-link {
-  font-size: var(--font-ui-small);
-  color: var(--text-normal);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
-.mpp-subfile-ext {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  color: var(--text-faint);
-  background: var(--background-modifier-border);
-  border-radius: 3px;
-  padding: 1px 4px;
-  letter-spacing: 0.03em;
-}
 
 /* ── New note row ────────────────────────────────────────────────────────── */
 
