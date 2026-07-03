@@ -16,12 +16,6 @@ import * as path from "path";
 
 const VIEW_TYPE = "my-project-panel";
 
-const SKIP_FILES = new Set([
-  "_PROJECT.md",
-  "CLAUDE.md",
-  "_WORKFRONT-SUMMARY.md",
-]);
-
 // Key in terminal plugin's data.json for the macOS integrated shell profile
 const TERMINAL_PROFILE = "darwinIntegratedDefault";
 // View type registered by polyipseity/obsidian-terminal
@@ -530,7 +524,7 @@ class ProjectPanelView extends ItemView {
       .filter((e) => e.isDirectory() && !e.name.startsWith("."))
       .sort((a, b) => a.name.localeCompare(b.name));
     const files = entries
-      .filter((e) => e.isFile() && !SKIP_FILES.has(e.name) && !e.name.startsWith(".") && !e.name.startsWith("~$"))
+      .filter((e) => e.isFile() && !e.name.startsWith(".") && !e.name.startsWith("~$"))
       .sort((a, b) => newestFirst ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
 
     for (const dir of dirs) {
