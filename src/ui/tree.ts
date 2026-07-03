@@ -6,7 +6,7 @@ import { openPath } from "../util/obsidian";
 
 // Render a native-Obsidian file tree.
 // relDir = vault-relative dir (md opens in Obsidian, rest external) or
-//          null (all entries open externally — e.g. SharePoint).
+//          null (all entries open externally — files folders).
 export function renderTree(
   app: App,
   container: HTMLElement,

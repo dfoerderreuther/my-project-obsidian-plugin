@@ -15,7 +15,7 @@ export function renderNewNoteRow(
   input.value       = today + " ";
   input.placeholder = "yyyy-mm-dd note title";
 
-  const btn = row.createEl("button", { text: "Create", cls: "mpp-new-note-btn" });
+  const btn = row.createEl("button", { text: "Create Note", cls: "mpp-new-note-btn" });
 
   const create = async () => {
     let name = input.value.trim();

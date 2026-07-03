@@ -40,6 +40,12 @@
   border-bottom-color: var(--color-accent);
   font-weight: 600;
 }
+.mpp-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.mpp-tab-icon svg { width: 14px; height: 14px; }
 .mpp-tab-label {
   max-width: 140px;
   overflow: hidden;
@@ -190,7 +196,7 @@
 
 /* ── Ant Design icons ────────────────────────────────────────────────────── */
 
-/* Button leading icons (Claude / Workfront / Obsidian) */
+/* Button leading icons */
 .mpp-btn-icon {
   display: inline-flex;
   align-items: center;
@@ -297,25 +303,6 @@
 }
 .mpp-path-remove:hover { color: var(--text-error); }
 .mpp-path-remove svg { width: 14px; height: 14px; }
-
-/* ── Workfront activity type tag ─────────────────────────────────────────── */
-
-.mpp-wf-meta {
-  margin-bottom: 10px;
-}
-
-.mpp-wf-activity {
-  display: inline-block;
-  font-size: 11px;
-  color: var(--text-muted);
-  background: var(--background-secondary);
-  border-radius: var(--radius-s);
-  padding: 2px 7px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
 
 /* ── Action buttons ──────────────────────────────────────────────────────── */
 

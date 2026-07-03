@@ -4,7 +4,6 @@ import { Project, ProjectFrontmatter, effectiveLinks } from "./project";
 import { vaultBasePath } from "../util/obsidian";
 
 const PROJECT_FILE = "_PROJECT.md";
-const WORKFRONT_FILE = "_WORKFRONT-SUMMARY.md";
 
 // All _PROJECT.md across the vault, with a title, sorted by title.
 export function discover(app: App): { file: TFile; title: string }[] {
@@ -45,21 +44,5 @@ export async function load(app: App, file: TFile): Promise<Project | null> {
     links: effectiveLinks(fm),
     reads,
     writes,
-    activityType: await loadActivityType(app, folder),
   };
-}
-
-async function loadActivityType(app: App, folder: TFolder): Promise<string | undefined> {
-  const wfFile = folder.children.find(
-    (f): f is TFile => f instanceof TFile && f.name === WORKFRONT_FILE,
-  );
-  if (!wfFile) return undefined;
-  try {
-    const content = await app.vault.read(wfFile);
-    // Targeted extraction — avoids table parsing edge cases.
-    const m = content.match(/\|\s*Activity Type\s*\|\s*([^|\r\n]+)/);
-    return m?.[1]?.trim() || undefined;
-  } catch {
-    return undefined;
-  }
 }

@@ -115,18 +115,18 @@ function writeClaudeMd(app: App, projectFile: TFile, data: ProjectFrontmatter) {
     lines.push("| --- | --- |");
     lines.push(`| Obsidian notes (this folder) | \`${projDir}\` |`);
     writes.forEach((p, i) =>
-      lines.push(`| SharePoint — writable${writes.length > 1 ? ` #${i + 1}` : ""} | \`${p}\` |`));
+      lines.push(`| Writable files folder${writes.length > 1 ? ` #${i + 1}` : ""} | \`${p}\` |`));
     readOnly.forEach((p) => lines.push(`| Read-only reference | \`${p}\` |`));
     lines.push("");
     lines.push("## Where to write");
     lines.push("");
     if (firstWrite) {
-      lines.push(`- "write to SharePoint", "save the file", "write file X", "export …", or any **document** (xlsx, pptx, docx, pdf) → write to the **first writable SharePoint copy**: \`${firstWrite}\``);
+      lines.push(`- "save the file", "write file X", "export …", or any **document/file** (xlsx, pptx, docx, pdf, etc.) → write to the **first writable files folder**: \`${firstWrite}\``);
     } else {
-      lines.push("- No writable SharePoint path configured — add one in the project settings to enable document writes.");
+      lines.push("- No writable files folder configured — add one in the project settings to enable document writes.");
     }
     lines.push(`- "write a note", "summarize in X.md", "add to my notes", or any **Markdown note** → write to the **Obsidian notes folder**: \`${projDir}\``);
-    lines.push("- Default: prose/notes go to Obsidian; deliverable documents go to the writable SharePoint copy.");
+    lines.push("- Default: prose/notes/Markdown go to the Obsidian notes folder; documents and other files go to the first writable files folder.");
     lines.push("- Never write outside the paths allowed in `.claude/settings.json`.");
     lines.push(END);
     const block = lines.join("\n");

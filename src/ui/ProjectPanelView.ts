@@ -7,7 +7,7 @@ import { saveLinks } from "../model/persistence";
 import { openPath, waitForMetadata } from "../util/obsidian";
 import { DirWatcher } from "../util/watch";
 import { setAntIcon } from "../icons";
-import { openClaudeCode } from "../services/terminal";
+import { openClaudeCode, openTerminalIn } from "../services/terminal";
 import { renderHeader } from "./header";
 import { renderTree } from "./tree";
 import { renderLinksTab } from "./linksTab";
@@ -46,8 +46,7 @@ export class ProjectPanelView extends ItemView {
     );
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (file instanceof TFile &&
-            (file.name === "_PROJECT.md" || file.name === "_WORKFRONT-SUMMARY.md")) {
+        if (file instanceof TFile && file.name === "_PROJECT.md") {
           void this.refresh(true); // force re-render even if same project
         }
       }),
@@ -149,10 +148,15 @@ export class ProjectPanelView extends ItemView {
 
     for (const tab of tabs) {
       const btn = tabBar.createDiv({ cls: "mpp-tab", attr: { title: tab.fsPath ?? tab.label } });
-      btn.createSpan({ text: tab.label, cls: "mpp-tab-label" });
-      if (tab.access) {
+      // Leading marker: Notes → book, Links → link, file tabs → R/W badge.
+      if (tab.isNotes) {
+        setAntIcon(btn.createSpan({ cls: "mpp-tab-icon" }), "book");
+      } else if (tab.links) {
+        setAntIcon(btn.createSpan({ cls: "mpp-tab-icon" }), "link");
+      } else if (tab.access) {
         btn.createSpan({ text: tab.access, cls: `mpp-access mpp-access-${tab.access.toLowerCase()}` });
       }
+      btn.createSpan({ text: tab.label, cls: "mpp-tab-label" });
       btns.set(tab.label, btn);
       btn.addEventListener("click", () => show(tab.label));
     }
@@ -176,6 +180,9 @@ export class ProjectPanelView extends ItemView {
     // Folder tab (Notes or external path).
     const bar = body.createDiv("mpp-tab-bar");
     bar.createSpan({ text: tab.fsPath, cls: "mpp-tab-path", attr: { title: tab.fsPath ?? "" } });
+    const term = bar.createDiv({ cls: "mpp-path-finder", attr: { title: "Open terminal here" } });
+    setAntIcon(term, "code");
+    term.addEventListener("click", () => void openTerminalIn(this.app, tab.fsPath!, tab.label));
     const finder = bar.createDiv({ cls: "mpp-path-finder", attr: { title: "Open in Finder" } });
     setAntIcon(finder, "folderOpen");
     finder.addEventListener("click", () => openPath(tab.fsPath!));

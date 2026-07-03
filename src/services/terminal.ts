@@ -1,4 +1,4 @@
-import { App, Notice } from "obsidian";
+import { App, Notice, WorkspaceLeaf } from "obsidian";
 import * as fs from "fs";
 import * as path from "path";
 import { TERMINAL_PROFILE, TERMINAL_VIEW_TYPE } from "../constants";
@@ -64,44 +64,77 @@ export async function ensureReady(app: App): Promise<boolean> {
   return false;
 }
 
-// Open an integrated terminal split below the notes, running Claude Code in the
-// project directory, and rename its tab to the project title.
-export async function openClaudeCode(app: App, project: Project): Promise<void> {
+// Create a new leaf as a tab in the same group as `sibling`, or null on failure.
+function openTabBeside(app: App, sibling: WorkspaceLeaf): WorkspaceLeaf | null {
+  try {
+    const parent = (sibling as unknown as { parent?: unknown }).parent;
+    if (!parent) return null;
+    const ws = app.workspace as unknown as {
+      createLeafInParent(p: unknown, index: number): WorkspaceLeaf;
+    };
+    const children = (parent as { children?: unknown[] }).children ?? [];
+    return ws.createLeafInParent(parent, children.length);
+  } catch {
+    return null;
+  }
+}
+
+// Open an integrated terminal in `cwd`, running an optional command, tab titled `title`.
+// Reuses the terminal tab group if one is open, else splits below the notes.
+async function spawnTerminal(app: App, cwd: string, title: string, cmd: string | null): Promise<void> {
   if (!(await ensureReady(app))) return;
 
-  // Load the profile object (not a string key!) and override args to auto-launch claude.
-  // Prepend ~/.local/bin (where `claude` lives) to PATH so it's found in the login shell.
-  // After claude exits, exec a new interactive login zsh to keep the terminal alive.
-  const base  = loadTerminalProfile(app);
-  const title = (project.frontmatter.title ?? "Project").replace(/'/g, "");
-  const cmd   = `export PATH=$HOME/.local/bin:$PATH; printf '\\e]0;${title}\\a'; claude --permission-mode auto; exec zsh -l`;
-  const profile = base
-    ? { ...base, args: ["-l", "-c", cmd] }
-    : { type: "integrated", executable: "/bin/zsh", args: ["-l", "-c", cmd] };
+  // The profile must be the full object from the terminal plugin's data.json,
+  // not the string key. When cmd is given, override args to run it (login shell).
+  const base = loadTerminalProfile(app);
+  const profile = cmd
+    ? (base
+        ? { ...base, args: ["-l", "-c", cmd] }
+        : { type: "integrated", executable: "/bin/zsh", args: ["-l", "-c", cmd] })
+    : (base ?? { type: "integrated", executable: "/bin/zsh", args: ["-l"] });
 
-  const leaf = app.workspace.getLeaf("split", "horizontal");
+  // If a terminal is already open, add this one as a tab in its group.
+  // Otherwise open a fresh horizontal split below the notes.
+  const existing = app.workspace.getLeavesOfType(TERMINAL_VIEW_TYPE);
+  let leaf = existing.length
+    ? openTabBeside(app, existing[existing.length - 1])
+    : null;
+  if (!leaf) leaf = app.workspace.getLeaf("split", "horizontal");
+
   try {
     await leaf.setViewState({
       type: TERMINAL_VIEW_TYPE,
       active: true,
       state: {
-        [TERMINAL_VIEW_TYPE]: { profile, cwd: project.absDir, serial: Date.now() },
+        [TERMINAL_VIEW_TYPE]: { profile, cwd, serial: Date.now() },
       },
     });
     app.workspace.revealLeaf(leaf);
 
     // Rename the tab — poll until the tab header element exists, then set text directly.
     // The terminal plugin regenerates the title from the PTY hostname; we override after.
-    const tabTitle = project.frontmatter.title ?? "Project";
     void (async () => {
       for (let i = 0; i < 30; i++) {
         await sleep(100);
         const el = (leaf as unknown as { tabHeaderInnerTitleEl?: HTMLElement }).tabHeaderInnerTitleEl;
-        if (el) { el.textContent = tabTitle; break; }
+        if (el) { el.textContent = title; break; }
       }
     })();
   } catch (e) {
     new Notice(`Failed to open terminal: ${e}`);
     console.error("[my-project-panel]", e);
   }
+}
+
+// Terminal running Claude Code (auto permission mode) in the project directory,
+// kept alive after it exits. Prepend ~/.local/bin (where `claude` lives) to PATH.
+export function openClaudeCode(app: App, project: Project): Promise<void> {
+  const title = (project.frontmatter.title ?? "Project").replace(/'/g, "");
+  const cmd = `export PATH=$HOME/.local/bin:$PATH; printf '\\e]0;${title}\\a'; claude --permission-mode auto; exec zsh -l`;
+  return spawnTerminal(app, project.absDir, title, cmd);
+}
+
+// Plain integrated terminal in an arbitrary folder, tab titled with the folder name.
+export function openTerminalIn(app: App, cwd: string, title: string): Promise<void> {
+  return spawnTerminal(app, cwd, title, null);
 }

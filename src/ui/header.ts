@@ -1,7 +1,6 @@
 import { TFile } from "obsidian";
 import { Project } from "../model/project";
 import { setAntIcon } from "../icons";
-import { openPath } from "../util/obsidian";
 
 export interface HeaderCallbacks {
   onSelectProject(file: TFile): void;
@@ -42,12 +41,6 @@ export function renderHeader(
   setAntIcon(gear, "setting");
   gear.addEventListener("click", () => cb.onSettings());
 
-  // Activity type badge (from _WORKFRONT-SUMMARY.md).
-  if (project.activityType) {
-    const meta = fixed.createDiv("mpp-wf-meta");
-    meta.createSpan({ text: project.activityType, cls: "mpp-wf-activity" });
-  }
-
   // Action buttons.
   const actions = fixed.createDiv("mpp-actions");
 
@@ -55,9 +48,4 @@ export function renderHeader(
   setAntIcon(claudeBtn.createSpan({ cls: "mpp-btn-icon" }), "thunderbolt");
   claudeBtn.createSpan({ text: "Claude Code" });
   claudeBtn.addEventListener("click", () => cb.onClaude());
-
-  const obsBtn = actions.createEl("button", { cls: "mpp-btn-wf" });
-  setAntIcon(obsBtn.createSpan({ cls: "mpp-btn-icon" }), "folderOpen");
-  obsBtn.createSpan({ text: "Obsidian" });
-  obsBtn.addEventListener("click", () => openPath(project.absDir));
 }

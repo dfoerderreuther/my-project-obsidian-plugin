@@ -22,7 +22,6 @@ export interface Project {
   links: ProjectLink[];  // effective links (stored + legacy workfront)
   reads: string[];       // absolute read_paths
   writes: string[];      // absolute write_paths
-  activityType?: string; // from _WORKFRONT-SUMMARY.md, if present
 }
 
 // Effective links = stored links + legacy workfront, deduped by url.
