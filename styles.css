@@ -70,6 +70,74 @@
   text-align: left;
 }
 
+/* ── Links tab ───────────────────────────────────────────────────────────── */
+
+.mpp-link-list { display: flex; flex-direction: column; gap: 2px; }
+
+.mpp-link-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+.mpp-link-row:hover { background: var(--background-modifier-hover); }
+.mpp-link-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+.mpp-link-icon svg { width: 14px; height: 14px; }
+.mpp-link-label {
+  flex-shrink: 0;
+  font-weight: 500;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+}
+.mpp-link-url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+/* Add-link row (Links tab) */
+.mpp-new-link {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.mpp-new-link-label { flex: 0 0 30%; min-width: 0; }
+.mpp-new-link-url   { flex: 1; min-width: 0; }
+.mpp-new-link-label,
+.mpp-new-link-url {
+  font-size: var(--font-ui-small);
+  padding: 4px 7px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+.mpp-new-link-label:focus,
+.mpp-new-link-url:focus { outline: none; border-color: var(--color-accent); }
+
+/* Link editor rows (settings modal) */
+.mpp-link-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.mpp-link-input-label { flex: 0 0 30%; min-width: 0; }
+.mpp-link-input-url   { flex: 1; min-width: 0; }
+
 /* ── Status bar ──────────────────────────────────────────────────────────── */
 
 .mpp-statusbar {

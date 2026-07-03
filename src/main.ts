@@ -2,6 +2,7 @@ import {
   addIcon,
   App,
   ItemView,
+  Menu,
   Modal,
   Notice,
   Plugin,
@@ -106,11 +107,29 @@ interface ElectronDialog {
   }): Promise<{ canceled: boolean; filePaths: string[] }>;
 }
 
+interface ProjectLink {
+  label: string;
+  url: string;
+}
+
 interface ProjectFrontmatter {
   title?: string;
-  workfront?: string;
+  workfront?: string; // legacy — migrated into `links` on next save
+  links?: ProjectLink[];
   read_paths?: string[];
   write_paths?: string[];
+}
+
+// Effective links = stored links + legacy workfront, deduped by url.
+function effectiveLinks(fm: ProjectFrontmatter | null): ProjectLink[] {
+  const out: ProjectLink[] = [];
+  const seen = new Set<string>();
+  const push = (l: ProjectLink) => {
+    if (l.url && !seen.has(l.url)) { seen.add(l.url); out.push(l); }
+  };
+  for (const l of fm?.links ?? []) if (l && l.url) push({ label: l.label || l.url, url: l.url });
+  if (fm?.workfront) push({ label: "Workfront", url: fm.workfront });
+  return out;
 }
 
 interface WorkfrontData {
@@ -202,6 +221,8 @@ class ProjectPanelView extends ItemView {
   private wfData: WorkfrontData | null = null;
   private currentProjectFile: TFile | null = null; // tracks which _PROJECT.md is displayed
   private activeTabLabel: string | null = null;    // remembered tab across reloads
+  private watchers: fs.FSWatcher[] = [];           // fs.watch handles for rendered roots
+  private reloadTimer: number | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: MyProjectPlugin) {
     super(leaf);
@@ -228,6 +249,35 @@ class ProjectPanelView extends ItemView {
       })
     );
     await this.refresh(true);
+  }
+
+  async onClose() {
+    this.clearWatchers();
+  }
+
+  private clearWatchers() {
+    for (const w of this.watchers) { try { w.close(); } catch { /* ignore */ } }
+    this.watchers = [];
+    if (this.reloadTimer !== null) { window.clearTimeout(this.reloadTimer); this.reloadTimer = null; }
+  }
+
+  // Watch each rendered root (vault notes dir + external paths) recursively.
+  // Any change → debounced reload so new/renamed/deleted files show up.
+  private setupWatchers(paths: string[]) {
+    this.clearWatchers();
+    for (const p of paths) {
+      try {
+        this.watchers.push(fs.watch(p, { recursive: true }, () => this.scheduleReload()));
+      } catch { /* path may be unwatchable (offline cloud dir) — ignore */ }
+    }
+  }
+
+  private scheduleReload() {
+    if (this.reloadTimer !== null) window.clearTimeout(this.reloadTimer);
+    this.reloadTimer = window.setTimeout(() => {
+      this.reloadTimer = null;
+      if (this.currentProjectFile) void this.loadProjectFile(this.currentProjectFile);
+    }, 300);
   }
 
   private async refresh(force = false) {
@@ -322,7 +372,8 @@ class ProjectPanelView extends ItemView {
     contentEl.className = "mpp";
 
     if (!this.projectData || !this.projectDir || !this.vaultRelDir) return;
-    const { title, workfront, read_paths, write_paths } = this.projectData;
+    const { title, read_paths, write_paths } = this.projectData;
+    const links = effectiveLinks(this.projectData);
 
     // ── Fixed top region (header, activity, action buttons) ──────────────
     const fixed = contentEl.createDiv("mpp-fixed");
@@ -370,45 +421,36 @@ class ProjectPanelView extends ItemView {
     claudeBtn.createSpan({ text: "Claude Code" });
     claudeBtn.addEventListener("click", () => this.openClaudeCode());
 
-    if (workfront) {
-      const wfUrl = workfront;
-      const wfBtn = actions.createEl("button", { cls: "mpp-btn-wf" });
-      setAntIcon(wfBtn.createSpan({ cls: "mpp-btn-icon" }), "cloud");
-      wfBtn.createSpan({ text: "Workfront" });
-      wfBtn.addEventListener("click", () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        (require("electron") as { shell: { openExternal: (url: string) => void } }).shell.openExternal(wfUrl);
-      });
-    }
-
     // Obsidian button — opens the project's vault folder in Finder
     if (this.projectDir) {
       const obsDir = this.projectDir;
       this.makeFinderButton(actions, "Obsidian", obsDir);
     }
 
-    // ── Tabs: Notes, then writable (RW/W) paths, then read-only (R) ──────
+    // ── Tabs: Notes, Links, then writable (RW/W) paths, then read-only (R) ─
     const reads  = (read_paths  ?? []).filter((p) => path.isAbsolute(p));
     const writes = (write_paths ?? []).filter((p) => path.isAbsolute(p));
     const ordered: string[] = [];
     for (const p of [...reads, ...writes]) if (!ordered.includes(p)) ordered.push(p);
 
     type Tab = {
-      label: string; access?: string; fsPath: string;
-      relDir: string | null; newestFirst: boolean; isNotes?: boolean;
+      label: string; access?: string; fsPath?: string;
+      relDir?: string | null; newestFirst?: boolean;
+      isNotes?: boolean; links?: ProjectLink[];
     };
     const tabs: Tab[] = [{
       label: "Notes", fsPath: this.projectDir, relDir: this.vaultRelDir,
       newestFirst: true, isNotes: true,
     }];
-    const pathTabs = ordered.map((p) => ({
+    tabs.push({ label: "Links", links });
+    const pathTabs: Tab[] = ordered.map((p) => ({
       label: path.basename(p),
       access: (reads.includes(p) ? "R" : "") + (writes.includes(p) ? "W" : ""),
       fsPath: p, relDir: null, newestFirst: false,
     }));
     // Writable first (W in access), read-only last
     const rank = (a: string) => (a.includes("W") ? 0 : 1);
-    pathTabs.sort((a, b) => rank(a.access) - rank(b.access) || a.label.localeCompare(b.label));
+    pathTabs.sort((a, b) => rank(a.access ?? "") - rank(b.access ?? "") || a.label.localeCompare(b.label));
     tabs.push(...pathTabs);
 
     const tabBar = contentEl.createDiv("mpp-tabs");
@@ -428,7 +470,7 @@ class ProjectPanelView extends ItemView {
     };
 
     for (const tab of tabs) {
-      const btn = tabBar.createDiv({ cls: "mpp-tab", attr: { title: tab.fsPath } });
+      const btn = tabBar.createDiv({ cls: "mpp-tab", attr: { title: tab.fsPath ?? tab.label } });
       btn.createSpan({ text: tab.label, cls: "mpp-tab-label" });
       if (tab.access) {
         btn.createSpan({
@@ -441,28 +483,65 @@ class ProjectPanelView extends ItemView {
     }
 
     show(activeLabel);
+
+    // Watch the vault notes dir + every external path for changes.
+    this.setupWatchers([this.projectDir, ...ordered]);
   }
 
   // ── Tab body — Finder bar + file tree (+ new-note row for Notes) ────────
 
   private renderTabBody(
     body: HTMLElement,
-    tab: { label: string; fsPath: string; relDir: string | null; newestFirst: boolean; isNotes?: boolean },
+    tab: {
+      label: string; fsPath?: string; relDir?: string | null;
+      newestFirst?: boolean; isNotes?: boolean; links?: ProjectLink[];
+    },
   ) {
+    // Links tab — add-link row on top, then list of clickable external links.
+    if (tab.links) {
+      this.renderNewLinkRow(body);
+      const list = body.createDiv("mpp-link-list");
+      for (const l of tab.links) {
+        const row = list.createDiv({ cls: "mpp-link-row", attr: { title: l.url } });
+        setAntIcon(row.createSpan({ cls: "mpp-link-icon" }), "cloud");
+        row.createSpan({ text: l.label, cls: "mpp-link-label" });
+        row.createSpan({ text: l.url, cls: "mpp-link-url" });
+        row.addEventListener("click", () => {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          (require("electron") as { shell: { openExternal: (u: string) => void } }).shell.openExternal(l.url);
+        });
+        row.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          const menu = new Menu();
+          menu.addItem((i) => i.setTitle("Open").setIcon("lucide-arrow-up-right").onClick(() =>
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            (require("electron") as { shell: { openExternal: (u: string) => void } }).shell.openExternal(l.url)));
+          menu.addItem((i) => i.setTitle("Copy URL").setIcon("lucide-copy").onClick(() => {
+            void navigator.clipboard.writeText(l.url); new Notice("URL copied");
+          }));
+          menu.addSeparator();
+          menu.addItem((i) => i.setTitle("Remove link").setIcon("lucide-trash-2").onClick(() =>
+            void this.removeLink(l.url)));
+          menu.showAtMouseEvent(e);
+        });
+      }
+      return;
+    }
+
     const bar = body.createDiv("mpp-tab-bar");
-    bar.createSpan({ text: tab.fsPath, cls: "mpp-tab-path", attr: { title: tab.fsPath } });
+    bar.createSpan({ text: tab.fsPath, cls: "mpp-tab-path", attr: { title: tab.fsPath ?? "" } });
     const finder = bar.createDiv({ cls: "mpp-path-finder", attr: { title: "Open in Finder" } });
     setAntIcon(finder, "folderOpen");
     finder.addEventListener("click", () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      (require("electron") as { shell: { openPath: (p: string) => void } }).shell.openPath(tab.fsPath);
+      (require("electron") as { shell: { openPath: (p: string) => void } }).shell.openPath(tab.fsPath!);
     });
 
     // Notes tab: new-note creator on top, above the file tree
     if (tab.isNotes) this.renderNewNoteRow(body);
 
     const tree = body.createDiv("nav-files-container");
-    this.renderTree(tree, tab.fsPath, tab.relDir, tab.newestFirst);
+    this.renderTree(tree, tab.fsPath!, tab.relDir ?? null, tab.newestFirst ?? false);
   }
 
   // ── Settings modal — create / edit _PROJECT.md ─────────────────────────
@@ -579,6 +658,14 @@ class ProjectPanelView extends ItemView {
         childrenEl = null;
       }
     });
+
+    titleEl.addEventListener("contextmenu", (e) =>
+      this.showRowMenu(e, {
+        name, fsPath, openLabel: "Open in Finder",
+        open: () =>
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          (require("electron") as { shell: { openPath: (p: string) => void } }).shell.openPath(fsPath),
+      }));
   }
 
   private renderNavFile(
@@ -609,18 +696,40 @@ class ProjectPanelView extends ItemView {
 
     // md inside the vault → open in Obsidian; everything else → default app
     const openInVault = relPath !== null && ext === ".md";
-
-    titleEl.addEventListener("click", () => {
+    const open = () => {
       if (openInVault) {
         const vFile = this.app.vault.getAbstractFileByPath(normalizePath(relPath!));
-        if (vFile instanceof TFile) {
-          this.app.workspace.getLeaf().openFile(vFile);
-        }
+        if (vFile instanceof TFile) this.app.workspace.getLeaf().openFile(vFile);
       } else {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         (require("electron") as { shell: { openPath: (p: string) => void } }).shell.openPath(fsPath);
       }
-    });
+    };
+
+    titleEl.addEventListener("click", open);
+    titleEl.addEventListener("contextmenu", (e) =>
+      this.showRowMenu(e, { name, fsPath, open }));
+  }
+
+  // Right-click menu for a file/folder row: Open, Copy path, Copy name.
+  private showRowMenu(
+    e: MouseEvent,
+    opts: { name: string; fsPath: string; open: () => void; openLabel?: string },
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    const menu = new Menu();
+    menu.addItem((i) => i.setTitle(opts.openLabel ?? "Open").setIcon("lucide-arrow-up-right").onClick(opts.open));
+    menu.addSeparator();
+    menu.addItem((i) => i.setTitle("Copy path").setIcon("lucide-copy").onClick(() => {
+      void navigator.clipboard.writeText(opts.fsPath);
+      new Notice("Path copied");
+    }));
+    menu.addItem((i) => i.setTitle("Copy name").setIcon("lucide-copy").onClick(() => {
+      void navigator.clipboard.writeText(opts.name);
+      new Notice("Name copied");
+    }));
+    menu.showAtMouseEvent(e);
   }
 
   // ── New note creator ──────────────────────────────────────────────────
@@ -664,6 +773,56 @@ class ProjectPanelView extends ItemView {
     });
   }
 
+  // ── Link creator (Links tab) ──────────────────────────────────────────
+
+  private renderNewLinkRow(container: HTMLElement) {
+    const row = container.createDiv("mpp-new-link");
+
+    const label = row.createEl("input", { cls: "mpp-new-link-label" });
+    label.type = "text"; label.placeholder = "Label";
+
+    const url = row.createEl("input", { cls: "mpp-new-link-url" });
+    url.type = "text"; url.placeholder = "https://…";
+
+    const btn = row.createEl("button", { text: "Add", cls: "mpp-new-note-btn" });
+
+    const add = async () => {
+      const u = url.value.trim();
+      if (!u) { new Notice("URL required"); return; }
+      const l = label.value.trim() || u;
+      await this.saveLinks([...effectiveLinks(this.projectData), { label: l, url: u }]);
+    };
+
+    btn.addEventListener("click", add);
+    url.addEventListener("keydown", (e) => { if (e.key === "Enter") add(); });
+    label.addEventListener("keydown", (e) => { if (e.key === "Enter") url.focus(); });
+  }
+
+  private async removeLink(url: string) {
+    await this.saveLinks(effectiveLinks(this.projectData).filter((l) => l.url !== url));
+  }
+
+  // Write the links list to _PROJECT.md (deduped), drop legacy workfront, reload.
+  private async saveLinks(links: ProjectLink[]) {
+    if (!this.currentProjectFile) return;
+    const seen = new Set<string>();
+    const clean = links
+      .map((l) => ({ label: (l.label || l.url).trim(), url: l.url.trim() }))
+      .filter((l) => l.url && !seen.has(l.url) && seen.add(l.url));
+
+    await this.app.fileManager.processFrontMatter(this.currentProjectFile, (fm) => {
+      delete fm.workfront;
+      if (clean.length) fm.links = clean; else delete fm.links;
+    });
+    await new Promise<void>((res) => {
+      const ref = this.app.metadataCache.on("changed", (f) => {
+        if (f.path === this.currentProjectFile?.path) { this.app.metadataCache.offref(ref); res(); }
+      });
+      window.setTimeout(() => { this.app.metadataCache.offref(ref); res(); }, 800);
+    });
+    if (this.currentProjectFile) await this.loadProjectFile(this.currentProjectFile);
+  }
+
   // ── Claude Code ──────────────────────────────────────────────────────
 
   private loadTerminalProfile(): Record<string, unknown> | null {
@@ -679,15 +838,56 @@ class ProjectPanelView extends ItemView {
     }
   }
 
+  // The Claude Code button relies on polyipseity/obsidian-terminal (plugin id
+  // "terminal"). No Obsidian API declares or auto-installs dependencies, so:
+  //   installed + enabled → ok
+  //   installed, disabled → enable it (one real API call)
+  //   missing             → open its marketplace page to install
+  private async ensureTerminalReady(): Promise<boolean> {
+    const plugins = (this.app as unknown as {
+      plugins: {
+        plugins: Record<string, unknown>;
+        enabledPlugins: Set<string>;
+        manifests: Record<string, unknown>;
+        enablePlugin(id: string): Promise<void>;
+      };
+    }).plugins;
+
+    if (plugins.plugins["terminal"] && plugins.enabledPlugins.has("terminal")) return true;
+
+    // Installed but not enabled → enable it now.
+    if (plugins.manifests["terminal"]) {
+      try {
+        await plugins.enablePlugin("terminal");
+        new Notice("Enabled the Terminal plugin");
+        // Give it a tick to register its view type before we open a leaf.
+        await sleep(300);
+        return !!plugins.plugins["terminal"];
+      } catch (e) {
+        new Notice(`Could not enable Terminal plugin: ${e}`);
+        return false;
+      }
+    }
+
+    // Not installed → send the user to its install page.
+    const frag = document.createDocumentFragment();
+    frag.appendChild(document.createTextNode("Claude Code needs the Terminal plugin. "));
+    const link = document.createElement("a");
+    link.textContent = "Click to install.";
+    link.href = "#";
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.open("obsidian://show-plugin?id=terminal");
+    });
+    frag.appendChild(link);
+    new Notice(frag, 10000);
+    return false;
+  }
+
   private async openClaudeCode() {
     if (!this.projectDir) return;
 
-    const termPlugin = (this.app as { plugins: { plugins: Record<string, unknown> } })
-      .plugins.plugins["terminal"];
-    if (!termPlugin) {
-      new Notice("polyipseity/obsidian-terminal not installed");
-      return;
-    }
+    if (!(await this.ensureTerminalReady())) return;
 
     // Load the profile object (not a string key!) and override args to auto-launch claude.
     // Prepend ~/.local/bin (where `claude` lives) to PATH so it's found in the login shell.
@@ -761,7 +961,8 @@ class ProjectSettingsModal extends Modal {
     contentEl.createEl("h3", { text: this.file ? "Edit project" : "New project" });
 
     let title = this.data.title ?? "";
-    let wf     = this.data.workfront ?? "";
+    // Seed links from stored links + legacy workfront (migration on save).
+    const links: ProjectLink[] = effectiveLinks(this.data).map((l) => ({ ...l }));
     const readPaths  = [...(this.data.read_paths  ?? [])];
     const writePaths = [...(this.data.write_paths ?? [])];
 
@@ -769,10 +970,7 @@ class ProjectSettingsModal extends Modal {
       .setName("Title")
       .addText((t) => t.setValue(title).onChange((v) => (title = v)));
 
-    new Setting(contentEl)
-      .setName("Workfront URL")
-      .addText((t) => t.setValue(wf).onChange((v) => (wf = v)));
-
+    this.buildLinkField(contentEl, links);
     this.buildPathField(contentEl, "Read paths", readPaths);
     this.buildPathField(contentEl, "Write paths", writePaths);
 
@@ -782,15 +980,52 @@ class ProjectSettingsModal extends Modal {
         b.setButtonText("Save").setCta().onClick(async () => {
           const t = title.trim();
           if (!t) { new Notice("Title is required"); return; }
+          const cleanLinks = links
+            .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+            .filter((l) => l.url);
           await this.save({
             title: t,
-            workfront: wf.trim() || undefined,
+            links: cleanLinks,
             read_paths: readPaths,
             write_paths: writePaths,
           });
           this.close();
         }),
       );
+  }
+
+  private buildLinkField(container: HTMLElement, list: ProjectLink[]) {
+    const field = container.createDiv("mpp-path-field");
+    const head  = field.createDiv("mpp-path-head");
+    head.createSpan({ text: "Links", cls: "mpp-path-name" });
+    const addBtn = head.createEl("button", { cls: "mpp-path-add" });
+    setAntIcon(addBtn.createSpan(), "folderAdd");
+    addBtn.createSpan({ text: "Add link" });
+
+    const listEl = field.createDiv("mpp-path-list");
+
+    const render = () => {
+      listEl.empty();
+      if (!list.length) {
+        listEl.createDiv({ text: "No links", cls: "mpp-path-empty" });
+        return;
+      }
+      list.forEach((link, i) => {
+        const row = listEl.createDiv("mpp-link-edit-row");
+        const label = row.createEl("input", { cls: "mpp-link-input-label" });
+        label.type = "text"; label.placeholder = "Label"; label.value = link.label;
+        label.addEventListener("input", () => (link.label = label.value));
+        const url = row.createEl("input", { cls: "mpp-link-input-url" });
+        url.type = "text"; url.placeholder = "https://…"; url.value = link.url;
+        url.addEventListener("input", () => (link.url = url.value));
+        const rm = row.createSpan({ cls: "mpp-path-remove", attr: { title: "Remove" } });
+        setAntIcon(rm, "close");
+        rm.addEventListener("click", () => { list.splice(i, 1); render(); });
+      });
+    };
+
+    addBtn.addEventListener("click", () => { list.push({ label: "", url: "" }); render(); });
+    render();
   }
 
   private buildPathField(container: HTMLElement, name: string, list: string[]) {
@@ -859,7 +1094,8 @@ class ProjectSettingsModal extends Modal {
     }
     await this.app.fileManager.processFrontMatter(file, (fm) => {
       fm.title       = data.title;
-      if (data.workfront) fm.workfront = data.workfront; else delete fm.workfront;
+      delete fm.workfront; // migrated into `links`
+      if (data.links?.length) fm.links = data.links; else delete fm.links;
       fm.read_paths  = data.read_paths  ?? [];
       fm.write_paths = data.write_paths ?? [];
     });
@@ -891,7 +1127,13 @@ class ProjectSettingsModal extends Modal {
       lines.push(`# ${data.title ?? "Project"}`);
       lines.push("");
       lines.push("Customer project. This file is auto-generated by the My Project Panel plugin — edit outside the markers only.");
-      if (data.workfront) { lines.push(""); lines.push(`Workfront: ${data.workfront}`); }
+      const links = effectiveLinks(data);
+      if (links.length) {
+        lines.push("");
+        lines.push("## Links");
+        lines.push("");
+        for (const l of links) lines.push(`- [${l.label}](${l.url})`);
+      }
       lines.push("");
       lines.push("## Locations");
       lines.push("");
