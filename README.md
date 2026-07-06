@@ -51,24 +51,25 @@ You don't have to write this by hand — use the panel's gear icon, or right-cli
 
 This is not (yet) in the community plugin store — install it manually with the bundled script.
 
-1. Clone the repo and install dependencies:
+1. Install the required **Terminal** plugin: in Obsidian, **Settings → Community plugins → Browse**, search "Terminal" (by polyipseity), install and enable it.
+2. Clone the repo and install dependencies:
    ```bash
    git clone <repo-url>
    cd my-project-panel
    npm install
    ```
-2. Point the installer at your vault. Copy the example env and set your vault path:
+3. Point the installer at your vault. Copy the example env and set your vault path:
    ```bash
    cp .env.example .env
    # edit .env → VAULT="/absolute/path/to/your/ObsidianVault"
    ```
-3. Build and install into the vault:
+4. Build and install into the vault:
    ```bash
    bash install.sh
    ```
    This builds `main.js` and copies `main.js`, `manifest.json`, and `styles.css` into
    `<VAULT>/.obsidian/plugins/my-project-panel/`.
-4. In Obsidian: **Settings → Community plugins**, enable **My Project Panel** (reload Obsidian if it doesn't appear).
+5. In Obsidian: **Settings → Community plugins**, enable **My Project Panel** (reload Obsidian if it doesn't appear).
 
 `.env` is gitignored — your vault path never leaves your machine.
 
