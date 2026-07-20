@@ -49,9 +49,14 @@ You don't have to write this by hand — use the panel's gear icon, or right-cli
 
 ## Install
 
-This is not (yet) in the community plugin store — install it manually with the bundled script.
+This is not (yet) in the community plugin store — install it manually, either from source or from a prebuilt zip.
 
 1. Install the required **Terminal** plugin: in Obsidian, **Settings → Community plugins → Browse**, search "Terminal" (by polyipseity), install and enable it.
+
+### Option A: from source (`install.sh`)
+
+Requires `git` and Node/npm.
+
 2. Clone the repo and install dependencies:
    ```bash
    git clone <repo-url>
@@ -72,6 +77,13 @@ This is not (yet) in the community plugin store — install it manually with the
 5. In Obsidian: **Settings → Community plugins**, enable **My Project Panel** (reload Obsidian if it doesn't appear).
 
 `.env` is gitignored — your vault path never leaves your machine.
+
+### Option B: from a prebuilt zip (no git/npm needed)
+
+2. Download `my-project-panel.zip` from the [Releases page](../../releases/latest).
+3. Unzip it — you get a `my-project-panel/` folder containing `main.js`, `manifest.json`, `styles.css`.
+4. Copy that folder into `<VAULT>/.obsidian/plugins/` (create `.obsidian/plugins/` if it doesn't exist; it's hidden, so enable hidden files in Finder/Explorer or navigate to it directly).
+5. In Obsidian: **Settings → Community plugins**, enable **My Project Panel** (reload Obsidian if it doesn't appear).
 
 ## Development
 
