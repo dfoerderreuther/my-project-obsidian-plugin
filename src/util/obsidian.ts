@@ -1,4 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
+import { TERMINAL_VIEW_TYPE } from "../constants";
 
 // Absolute filesystem path of the vault root.
 export function vaultBasePath(app: App): string {
@@ -15,6 +16,21 @@ export function openPath(p: string): void {
 export function openExternal(url: string): void {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   (require("electron") as { shell: { openExternal: (u: string) => void } }).shell.openExternal(url);
+}
+
+// Open `file` in a new note tab, beside existing notes — never inside the
+// integrated terminal's group even if it was the most recently focused leaf.
+export function openNoteLeaf(app: App, file: TFile): void {
+  const recent = app.workspace.getMostRecentLeaf();
+  const notesGroup = recent && recent.view.getViewType() !== TERMINAL_VIEW_TYPE
+    ? recent
+    : app.workspace.getLeavesOfType("markdown")[0] ?? null;
+  // getLeaf("tab") opens a new tab in whichever group is currently active, so make
+  // the notes group active first (falls back to the active group if none exists).
+  if (notesGroup) app.workspace.setActiveLeaf(notesGroup, { focus: false });
+  const leaf = app.workspace.getLeaf("tab");
+  void leaf.openFile(file);
+  app.workspace.setActiveLeaf(leaf, { focus: true });
 }
 
 // Resolve once the metadata cache reflects a change to `file` (or after a timeout).

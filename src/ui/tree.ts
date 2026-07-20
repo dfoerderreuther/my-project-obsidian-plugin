@@ -2,7 +2,7 @@ import { App, Menu, Notice, TFile, normalizePath } from "obsidian";
 import * as fs from "fs";
 import * as path from "path";
 import { FILE_ICONS, FILE_COLOR, setAntIcon } from "../icons";
-import { openPath } from "../util/obsidian";
+import { openPath, openNoteLeaf } from "../util/obsidian";
 
 // Render a native-Obsidian file tree.
 // relDir = vault-relative dir (md opens in Obsidian, rest external) or
@@ -117,7 +117,7 @@ function renderNavFile(
   const open = () => {
     if (openInVault) {
       const vFile = app.vault.getAbstractFileByPath(normalizePath(relPath!));
-      if (vFile instanceof TFile) app.workspace.getLeaf().openFile(vFile);
+      if (vFile instanceof TFile) openNoteLeaf(app, vFile);
     } else {
       openPath(fsPath);
     }

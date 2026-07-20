@@ -1,4 +1,5 @@
 import { App, TFile, normalizePath } from "obsidian";
+import { openNoteLeaf } from "../util/obsidian";
 
 // Date-prefixed new-note creator. Creates (or opens) a .md in the project folder.
 export function renderNewNoteRow(
@@ -25,7 +26,7 @@ export function renderNewNoteRow(
 
     let vFile = app.vault.getAbstractFileByPath(relPath) as TFile | null;
     if (!vFile) vFile = await app.vault.create(relPath, "") as TFile;
-    await app.workspace.getLeaf().openFile(vFile);
+    openNoteLeaf(app, vFile);
     onCreated();
   };
 
